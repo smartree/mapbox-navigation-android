@@ -21,7 +21,9 @@ import com.mapbox.navigation.base.internal.extensions.coordinates
 import com.mapbox.navigation.base.trip.model.RouteProgress
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
-import com.mapbox.navigation.core.replay.route.ReplayRouteLocationEngine
+import com.mapbox.navigation.core.replay.MapboxReplayer
+import com.mapbox.navigation.core.replay.ReplayLocationEngine
+import com.mapbox.navigation.core.replay.route.ReplayRouteMapper
 import com.mapbox.navigation.core.trip.session.BannerInstructionsObserver
 import com.mapbox.navigation.core.trip.session.RouteProgressObserver
 import com.mapbox.navigation.core.trip.session.TripSessionState
@@ -44,7 +46,7 @@ import kotlinx.android.synthetic.main.activity_guidance_view.startNavigation
  */
 class GuidanceViewActivity : AppCompatActivity(), OnMapReadyCallback {
 
-    private val replayRouteLocationEngine = ReplayRouteLocationEngine()
+    private val mapboxReplayer = MapboxReplayer()
     private val origin: Point = Point.fromLngLat(139.7772481, 35.6818019)
     private val destination: Point = Point.fromLngLat(139.7756523, 35.6789722)
 
@@ -66,7 +68,7 @@ class GuidanceViewActivity : AppCompatActivity(), OnMapReadyCallback {
         mapboxNavigation = MapboxNavigation(
                 applicationContext,
                 options,
-                locationEngine = replayRouteLocationEngine
+                locationEngine = ReplayLocationEngine(mapboxReplayer)
         ).also {
             it.registerRouteProgressObserver(routeProgressObserver)
             it.registerBannerInstructionsObserver(bannerInstructionObserver)
@@ -111,7 +113,9 @@ class GuidanceViewActivity : AppCompatActivity(), OnMapReadyCallback {
     private val routesReqCallback = object : RoutesRequestCallback {
         override fun onRoutesReady(routes: List<DirectionsRoute>) {
             navigationMapboxMap?.drawRoute(routes[0])
-            replayRouteLocationEngine.assign(routes[0])
+            val replayEvents = ReplayRouteMapper().mapDirectionsRouteGeometry(routes[0])
+            mapboxReplayer.finish()
+            mapboxReplayer.pushEvents(replayEvents)
         }
 
         override fun onRoutesRequestFailure(throwable: Throwable, routeOptions: RouteOptions) {
@@ -157,6 +161,7 @@ class GuidanceViewActivity : AppCompatActivity(), OnMapReadyCallback {
                     navigationMapboxMap?.startCamera(routes[0])
                 }
             }
+            mapboxReplayer.play()
         }
     }
 

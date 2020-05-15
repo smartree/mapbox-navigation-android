@@ -32,7 +32,8 @@ import com.mapbox.navigation.base.internal.extensions.coordinates
 import com.mapbox.navigation.base.trip.model.RouteProgress
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
-import com.mapbox.navigation.core.replay.route.ReplayRouteLocationEngine
+import com.mapbox.navigation.core.replay.MapboxReplayer
+import com.mapbox.navigation.core.replay.ReplayLocationEngine
 import com.mapbox.navigation.core.telemetry.events.FeedbackEvent.UI
 import com.mapbox.navigation.core.trip.session.BannerInstructionsObserver
 import com.mapbox.navigation.core.trip.session.RouteProgressObserver
@@ -73,6 +74,7 @@ class InstructionViewActivity : AppCompatActivity(), OnMapReadyCallback,
     private var navigationMapboxMap: NavigationMapboxMap? = null
     private lateinit var speechPlayer: NavigationSpeechPlayer
     private lateinit var destination: LatLng
+    private val mapboxReplayer = MapboxReplayer()
 
     private var mapboxMap: MapboxMap? = null
     private var feedbackButton: NavigationButton? = null
@@ -331,9 +333,6 @@ class InstructionViewActivity : AppCompatActivity(), OnMapReadyCallback,
         override fun onRoutesReady(routes: List<DirectionsRoute>) {
             if (routes.isNotEmpty()) {
                 navigationMapboxMap?.drawRoute(routes[0])
-                if (shouldSimulateRoute()) {
-                    (mapboxNavigation?.locationEngine as ReplayRouteLocationEngine).assign(routes[0])
-                }
                 startNavigation.visibility = VISIBLE
                 startNavigation.isEnabled = true
             } else {
@@ -396,7 +395,7 @@ class InstructionViewActivity : AppCompatActivity(), OnMapReadyCallback,
     // for testing else a real location engine is used.
     private fun getLocationEngine(): LocationEngine {
         return if (shouldSimulateRoute()) {
-            ReplayRouteLocationEngine()
+            ReplayLocationEngine(mapboxReplayer)
         } else {
             LocationEngineProvider.getBestLocationEngine(this)
         }

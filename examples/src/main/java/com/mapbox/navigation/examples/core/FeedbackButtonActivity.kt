@@ -26,7 +26,9 @@ import com.mapbox.navigation.base.internal.extensions.applyDefaultParams
 import com.mapbox.navigation.base.internal.extensions.coordinates
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
-import com.mapbox.navigation.core.replay.route.ReplayRouteLocationEngine
+import com.mapbox.navigation.core.replay.MapboxReplayer
+import com.mapbox.navigation.core.replay.ReplayLocationEngine
+import com.mapbox.navigation.core.replay.route.ReplayProgressObserver
 import com.mapbox.navigation.core.telemetry.events.FeedbackEvent.UI
 import com.mapbox.navigation.core.trip.session.TripSessionState
 import com.mapbox.navigation.core.trip.session.TripSessionStateObserver
@@ -52,12 +54,11 @@ import kotlinx.android.synthetic.main.activity_feedback_button.*
 class FeedbackButtonActivity : AppCompatActivity(), OnMapReadyCallback,
     FeedbackBottomSheetListener {
 
-    private val replayRouteLocationEngine by lazy { ReplayRouteLocationEngine() }
-
     private var mapboxMap: MapboxMap? = null
     private var mapboxNavigation: MapboxNavigation? = null
     private var navigationMapboxMap: NavigationMapboxMap? = null
     private lateinit var destination: LatLng
+    private val mapboxReplayer = MapboxReplayer()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,9 +76,10 @@ class FeedbackButtonActivity : AppCompatActivity(), OnMapReadyCallback,
         mapboxNavigation = MapboxNavigation(
             applicationContext,
             mapboxNavigationOptions,
-            replayRouteLocationEngine
+            ReplayLocationEngine(mapboxReplayer)
         ).apply {
             registerTripSessionStateObserver(tripSessionStateObserver)
+            registerRouteProgressObserver(ReplayProgressObserver(mapboxReplayer))
         }
 
         initListeners()
@@ -200,7 +202,6 @@ class FeedbackButtonActivity : AppCompatActivity(), OnMapReadyCallback,
         override fun onRoutesReady(routes: List<DirectionsRoute>) {
             if (routes.isNotEmpty()) {
                 navigationMapboxMap?.drawRoute(routes[0])
-                (mapboxNavigation?.locationEngine as ReplayRouteLocationEngine).assign(routes[0])
                 startNavigation.visibility = VISIBLE
                 startNavigation.isEnabled = true
             } else {

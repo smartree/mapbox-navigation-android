@@ -30,7 +30,8 @@ import com.mapbox.navigation.base.internal.extensions.coordinates
 import com.mapbox.navigation.base.trip.model.RouteProgress
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
-import com.mapbox.navigation.core.replay.route.ReplayRouteLocationEngine
+import com.mapbox.navigation.core.replay.MapboxReplayer
+import com.mapbox.navigation.core.replay.ReplayLocationEngine
 import com.mapbox.navigation.core.trip.session.RouteProgressObserver
 import com.mapbox.navigation.core.trip.session.TripSessionState
 import com.mapbox.navigation.core.trip.session.TripSessionStateObserver
@@ -50,7 +51,6 @@ import kotlinx.android.synthetic.main.activity_summary_bottom_sheet.*
  */
 class SummaryBottomSheetActivity : AppCompatActivity(), OnMapReadyCallback {
 
-    private val replayRouteLocationEngine by lazy { ReplayRouteLocationEngine() }
     private val routeOverviewPadding by lazy { buildRouteOverviewPadding() }
 
     private var mapboxNavigation: MapboxNavigation? = null
@@ -59,6 +59,7 @@ class SummaryBottomSheetActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var summaryBehavior: BottomSheetBehavior<SummaryBottomSheet>
     private lateinit var routeOverviewButton: ImageButton
     private lateinit var cancelBtn: AppCompatImageButton
+    private val mapboxReplayer = MapboxReplayer()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,7 +77,7 @@ class SummaryBottomSheetActivity : AppCompatActivity(), OnMapReadyCallback {
         mapboxNavigation = MapboxNavigation(
             applicationContext,
             mapboxNavigationOptions,
-            replayRouteLocationEngine
+            ReplayLocationEngine(mapboxReplayer)
         ).apply {
             registerTripSessionStateObserver(tripSessionStateObserver)
             registerRouteProgressObserver(routeProgressObserver)
@@ -253,7 +254,6 @@ class SummaryBottomSheetActivity : AppCompatActivity(), OnMapReadyCallback {
         override fun onRoutesReady(routes: List<DirectionsRoute>) {
             if (routes.isNotEmpty()) {
                 navigationMapboxMap?.drawRoute(routes[0])
-                (mapboxNavigation?.locationEngine as ReplayRouteLocationEngine).assign(routes[0])
                 startNavigation.visibility = VISIBLE
                 startNavigation.isEnabled = true
             } else {

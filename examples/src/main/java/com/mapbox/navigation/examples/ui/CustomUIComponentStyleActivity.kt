@@ -34,7 +34,8 @@ import com.mapbox.navigation.base.internal.extensions.coordinates
 import com.mapbox.navigation.base.trip.model.RouteProgress
 import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.directions.session.RoutesRequestCallback
-import com.mapbox.navigation.core.replay.route.ReplayRouteLocationEngine
+import com.mapbox.navigation.core.replay.MapboxReplayer
+import com.mapbox.navigation.core.replay.ReplayLocationEngine
 import com.mapbox.navigation.core.telemetry.events.FeedbackEvent
 import com.mapbox.navigation.core.trip.session.BannerInstructionsObserver
 import com.mapbox.navigation.core.trip.session.RouteProgressObserver
@@ -75,7 +76,6 @@ import timber.log.Timber
  */
 class CustomUIComponentStyleActivity : AppCompatActivity(), OnMapReadyCallback,
     FeedbackBottomSheetListener, OnWayNameChangedListener {
-    private val replayRouteLocationEngine by lazy { ReplayRouteLocationEngine() }
     private val routeOverviewPadding by lazy { buildRouteOverviewPadding() }
 
     private lateinit var mapboxNavigation: MapboxNavigation
@@ -88,6 +88,7 @@ class CustomUIComponentStyleActivity : AppCompatActivity(), OnMapReadyCallback,
     private lateinit var feedbackButton: NavigationButton
     private lateinit var instructionSoundButton: NavigationButton
     private lateinit var alertView: NavigationAlertView
+    private val mapboxReplayer = MapboxReplayer()
 
     private var mapboxMap: MapboxMap? = null
     private var locationComponent: LocationComponent? = null
@@ -237,8 +238,6 @@ class CustomUIComponentStyleActivity : AppCompatActivity(), OnMapReadyCallback,
             setOnClickListener {
                 Timber.d("start navigation")
                 if (mapboxNavigation.getRoutes().isNotEmpty()) {
-                    replayRouteLocationEngine.assign(mapboxNavigation.getRoutes()[0])
-
                     updateCameraOnNavigationStateChange(true)
                     navigationMapboxMap?.startCamera(mapboxNavigation.getRoutes()[0])
 
@@ -358,7 +357,7 @@ class CustomUIComponentStyleActivity : AppCompatActivity(), OnMapReadyCallback,
         mapboxNavigation = MapboxNavigation(
             applicationContext,
             MapboxNavigation.defaultNavigationOptions(this, accessToken),
-            replayRouteLocationEngine
+            ReplayLocationEngine(mapboxReplayer)
         )
         mapboxNavigation.apply {
             registerTripSessionStateObserver(tripSessionStateObserver)
