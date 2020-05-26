@@ -113,6 +113,7 @@ dependencies {
   testImplementation dependenciesList.robolectric
   testImplementation dependenciesList.json
   testImplementation dependenciesList.androidxTestCore
+  testImplementation dependenciesList.coroutinesTestAndroid
 }
 apply from: "${rootDir}/gradle/jacoco.gradle"
 apply from: "${rootDir}/gradle/checkstyle.gradle"

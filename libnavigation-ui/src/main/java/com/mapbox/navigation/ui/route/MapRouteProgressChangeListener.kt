@@ -1,5 +1,6 @@
 package com.mapbox.navigation.ui.route
 
+import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
 import android.view.animation.LinearInterpolator
 import com.mapbox.api.directions.v5.models.DirectionsRoute
@@ -9,7 +10,6 @@ import com.mapbox.navigation.ui.route.RouteConstants.MINIMUM_ROUTE_LINE_OFFSET
 import com.mapbox.navigation.ui.route.RouteConstants.ROUTE_LINE_VANISH_ANIMATION_DELAY
 import com.mapbox.navigation.ui.route.RouteConstants.ROUTE_LINE_VANISH_ANIMATION_DURATION
 import com.mapbox.navigation.utils.internal.ThreadController
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -39,8 +39,15 @@ internal class MapRouteProgressChangeListener(
         routeArrow: MapRouteArrow
     ) : this(routeLine, routeArrow, false)
 
-    private var job: Job? = null
+    private val jobControl by lazy { ThreadController.getMainScopeAndRootJob() }
     private var lastDistanceValue = 0f
+    private val animator by lazy {
+        ValueAnimator.ofFloat().apply {
+            duration = ROUTE_LINE_VANISH_ANIMATION_DURATION
+            interpolator = LinearInterpolator()
+            startDelay = ROUTE_LINE_VANISH_ANIMATION_DELAY
+        }
+    }
 
     override fun onRouteProgressChanged(routeProgress: RouteProgress) {
         onProgressChange(routeProgress)
@@ -59,8 +66,8 @@ internal class MapRouteProgressChangeListener(
         } else {
             // if there is no geometry then the session is in free drive and the vanishing
             // route line code should not execute.
-            if (vanishRouteLineEnabled && hasGeometry && (job == null || !job!!.isActive)) {
-                job = ThreadController.getMainScopeAndRootJob().scope.launch {
+            if (vanishRouteLineEnabled && hasGeometry) {
+                jobControl.scope.launch {
                     val percentDistanceTraveled = getPercentDistanceTraveled(routeProgress)
                     if (percentDistanceTraveled > 0) {
                         animateVanishRouteLineUpdate(lastDistanceValue, percentDistanceTraveled)
@@ -72,21 +79,31 @@ internal class MapRouteProgressChangeListener(
         routeArrow.addUpcomingManeuverArrow(routeProgress)
     }
 
-    private fun animateVanishRouteLineUpdate(startingDistanceValue: Float, percentDistanceTraveled: Float) {
-        ValueAnimator.ofFloat(startingDistanceValue, percentDistanceTraveled).apply {
-            duration = ROUTE_LINE_VANISH_ANIMATION_DURATION
-            interpolator = LinearInterpolator()
-            startDelay = ROUTE_LINE_VANISH_ANIMATION_DELAY
-            addUpdateListener {
-                val animationDistanceValue = it.animatedValue as Float
-                if (animationDistanceValue > MINIMUM_ROUTE_LINE_OFFSET) {
-                    val expression = routeLine.getExpressionAtOffset(animationDistanceValue)
+    private fun animateVanishRouteLineUpdate(
+        startingDistanceValue: Float,
+        percentDistanceTraveled: Float
+    ) {
+        animator.removeAllUpdateListeners()
+        animator.cancel()
+        animator.addUpdateListener {
+            val animationDistanceValue = it.animatedValue as Float
+            if (animationDistanceValue > MINIMUM_ROUTE_LINE_OFFSET) {
+                val expression = routeLine.getExpressionAtOffset(animationDistanceValue)
+                if (jobControl.job.isActive) {
                     routeLine.hideShieldLineAtOffset(animationDistanceValue)
                     routeLine.decorateRouteLine(expression)
+                } else {
+                    animator.removeAllUpdateListeners()
+                    animator.end()
                 }
             }
-            start()
         }
+        animator.setValues(PropertyValuesHolder.ofFloat(
+            "",
+            startingDistanceValue,
+            percentDistanceTraveled
+        ))
+        animator.start()
     }
 
     private fun getPercentDistanceTraveled(routeProgress: RouteProgress): Float {
