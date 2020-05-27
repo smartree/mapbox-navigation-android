@@ -14,7 +14,7 @@ ext {
       mapboxSdkDirectionsModels : '5.2.1',
       mapboxEvents              : '5.0.1',
       mapboxCore                : '2.0.1',
-      mapboxNavigator           : '12.0.3',
+      mapboxNavigator           : '13.0.0',
       mapboxCrashMonitor        : '2.0.0',
       mapboxAnnotationPlugin    : '0.8.0',
       mapboxAccounts            : '0.3.1',
@@ -23,6 +23,7 @@ ext {
       mapboxAnnotationsProcessor: '0.1.0',
       mapboxCommon              : '0.1.0',
       mapboxLogger              : '0.1.0',
+      mapboxOkHttp              : '1.2.0',
       androidXCoreVersion       : '1.2.0',
       androidXAppCompatVersion  : '1.1.0',
       androidXAnnotationVersion : '1.1.0',
@@ -83,6 +84,7 @@ ext {
       mapboxAnnotationsProcessor: "com.mapbox.base:annotations-processor:${version.mapboxAnnotationsProcessor}",
       mapboxCommon              : "com.mapbox.base:common:${version.mapboxCommon}",
       mapboxLogger              : "com.mapbox.common:logger:${version.mapboxLogger}",
+      mapboxOkHttp              : "com.mapbox.common:okhttp:${version.mapboxOkHttp}",
 
       // Kotlin
       kotlinStdLib              : "org.jetbrains.kotlin:kotlin-stdlib-jdk8:${version.kotlinStdLib}",

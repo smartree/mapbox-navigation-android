@@ -77,7 +77,7 @@ class MapboxOnboardRouter(
                         NativeSkuTokenProvider(skuTokenProvider)
                     )
                 })
-            navigatorNative.configureRouter(routerParams, null)
+            navigatorNative.configureRouter(routerParams)
         }
     }
 

@@ -1,8 +1,11 @@
 package com.mapbox.navigation.navigator.internal
 
+import com.mapbox.base.common.logger.Logger
+import com.mapbox.common.HttpServiceFactory
 import com.mapbox.navigation.base.options.AutomobileProfile
 import com.mapbox.navigation.base.options.DeviceProfile
 import com.mapbox.navigation.base.options.HandheldProfile
+import com.mapbox.navigation.navigator.internal.NavigatorLoader.customConfig
 import com.mapbox.navigator.Navigator
 import com.mapbox.navigator.ProfileApplication
 import com.mapbox.navigator.ProfilePlatform
@@ -15,10 +18,12 @@ import com.mapbox.navigator.SettingsProfile
 internal object NavigatorLoader {
 
     init {
+        System.loadLibrary("mapbox-common")
         System.loadLibrary("navigator-android")
     }
 
-    fun createNavigator(deviceProfile: DeviceProfile): Navigator {
+    fun createNavigator(deviceProfile: DeviceProfile, logger: Logger?): Navigator {
+        HttpServiceFactory.setUserDefined(NavigationOkHttpService(logger))
         return Navigator(
             settingsProfile(deviceProfile),
             customConfig(deviceProfile)

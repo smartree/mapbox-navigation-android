@@ -287,7 +287,7 @@ abstract class BaseRouterActivityKt :
                 null,
                 null // working with pre-fetched tiles only
             )
-            val nativeNavigator = MapboxNativeNavigatorImpl.create(deviceProfile)
+            val nativeNavigator = MapboxNativeNavigatorImpl.create(deviceProfile, null)
             return MapboxOnboardRouter(accessToken, nativeNavigator, config, MapboxLogger, MapboxNavigationAccounts.getInstance(context))
         }
 
