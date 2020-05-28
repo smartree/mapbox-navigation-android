@@ -37,9 +37,9 @@ import com.mapbox.navigation.examples.utils.extensions.toPoint
 import com.mapbox.navigation.ui.camera.NavigationCamera
 import com.mapbox.navigation.ui.map.NavigationMapboxMap
 import com.mapbox.navigation.ui.map.NavigationMapboxMapInstanceState
+import java.lang.ref.WeakReference
 import kotlinx.android.synthetic.main.activity_basic_navigation_layout.*
 import timber.log.Timber
-import java.lang.ref.WeakReference
 
 /**
  * This activity shows how to set up a basic turn-by-turn
@@ -86,9 +86,6 @@ class BasicNavigationActivity : AppCompatActivity(), OnMapReadyCallback {
         ).apply {
             registerTripSessionStateObserver(tripSessionStateObserver)
             registerRouteProgressObserver(routeProgressObserver)
-            if (shouldSimulateRoute()) {
-                registerRouteProgressObserver(ReplayProgressObserver(mapboxReplayer))
-            }
         }
 
         initListeners()
@@ -105,11 +102,11 @@ class BasicNavigationActivity : AppCompatActivity(), OnMapReadyCallback {
             }
             // center the map at current location
             if (shouldSimulateRoute()) {
-                LocationEngineProvider.getBestLocationEngine(this)
-                    .getLastLocation(locationListenerCallback)
-            } else {
-                mapboxNavigation?.locationEngine?.getLastLocation(locationListenerCallback)
+                mapboxNavigation?.registerRouteProgressObserver(ReplayProgressObserver(mapboxReplayer))
+                mapboxReplayer.pushGpsLocation(this, 0.0)
+                mapboxReplayer.play()
             }
+            mapboxNavigation?.locationEngine?.getLastLocation(locationListenerCallback)
         }
         mapboxMap.addOnMapLongClickListener { latLng ->
             mapboxMap.locationComponent.lastKnownLocation?.let { originLocation ->
